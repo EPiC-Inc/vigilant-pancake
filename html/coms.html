@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src='/js/jquery.js'></script>
+    <script src='/js/socket.io.js'></script>
+    <link rel="shortcut icon" type="image/webp" href="/img/favicon.webp" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link href='./css/core.css' rel='stylesheet'>
+    <link href='./css/dark.css' id='theme' rel='stylesheet'>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css" rel="stylesheet">
+    <title>NOS2</title>
+  </head>
+  <body>
+    <div id="content"></div>
+    <!--The entire header with the username-->
+      <header style="padding: 0px 5px">
+               <!--<button onclick="openUsers();">Users</button>-->
+      <span style="font-size:30px; background-color: #1c1c1f; padding-top: 100px; padding-bottom: 15px;">username: <span id='username'></span>
+      </span>
+              <!--<button onclick="openRooms();" class="right" style='margin-right:128px;'>Rooms</button>-->
+    </header>
+    <div id="content">
+      <div id="sticky" class="sticky">
+      <!--Start of sidenav things that get opened-->
+      <div id="roomsNav" class="sidenav sidenav-right">
+        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+        <br>
+        <span>Your rooms:</span>
+        <br>
+        <div id='rooms'></div>
+      </div>
+      <div id="join_room" class="sidenav sidenav-right">
+        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+        <br>
+        <span>Join a Room</span>
+        <br>
+        <br>
+        <form style='margin-left:0px;padding-left:0px;' onsubmit='return false;'>
+          <input type='text' id='roomkey' style='width:90px;' maxlength="10" />
+          <br>
+          <br>
+          <button onclick='joinRoom();'>Join</button>
+          <br>
+          <br>
+        </form>
+        <span id='err' style='color:red'></span>
+      </div>
+      <div id="usersNav" class="sidenav sidenav-right">
+        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+        <br>
+        <span>Users online:</span>
+        <br>
+        <div id='users'></div>
+      </div>
+      <div id="logsNav" class="sidenav sidenav-right">
+        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+        <br>
+        <span>Log:</span>
+        <br>
+        <a href='javascript:void(0)' onclick=''>Refresh</a>
+        <br>
+        <div id='users'></div>
+      </div>
+      <div id="other_stuff" class="sidenav sidenav-right">
+        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+        <br>
+        <span style='font-size:40px;'>Menu:</span>
+        <div>
+          <span>
+            <a href='./settings.html'>Account Settings</a>
+          </span>
+        </div>
+      </div>
+      <div id="settingsNav" class="sidenav sidenav-right">
+        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+        <div id='settings'></div>
+      </div>
+      <div id="profileNav" class="sidenav sidenav-right">
+        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+        <div id='profile'></div>
+      </div>
+      <div id="createNav" class="sidenav sidenav-right">
+        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+        <div id='creator'>
+          <br>
+          <span>Room name:</span>
+          <br>
+          <form style='margin-left:0px;padding-left:0px;' onsubmit='return false;'>
+            <input type='text' style='width:160px;' id='createRoomName' />
+            <br>
+            <br>
+            <button onclick="createRoom();">Create Room</button>
+          </form>
+        </div>
+      </div>
+      <!--End of sidenav that opens things-->
+      <script>
+        function myFunction() {
+          alert("I am an alert box!");
+        }
+      </script>
+      <!--Start of visible sidebar-->
+      <div style="color:black">
+      <nav>
+        <ul>
+          <li>
+            <div class="tooltip">
+              <a href='javascript:void(0)' onclick='closeNav();openCreate();'>
+                <i class="fa fa-plus"></i>
+              </a>
+              <span class="tooltiptext">Create a room</span>
+            </div>
+          </li>
+          <li>
+            <div class="tooltip">
+              <a href='javascript:void(0)' onclick='closeNav();openJoin();'>
+                <i class=" fa fa-sign-in"></i>
+              </a>
+              <span class="tooltiptext">Join a room</span>
+            </div>
+          </li>
+          <li>
+            <div class="tooltip">
+              <a href='javascript:void(0)' onclick='closeNav();openUsers();'>
+                <i class="fa fa-users"></i>
+              </a>
+              <span class="tooltiptext">Users Online</span>
+            </div>
+          </li>
+          <li>
+            <div class="tooltip">
+              <a href='javascript:void(0)' onclick='closeNav();openRooms();'>
+                <i class="fa fa-home"></i>
+              </a>
+              <span class="tooltiptext">Your rooms</span>
+            </div>
+          </li>
+          <li>
+            <div class="tooltip">
+              <a href='javascript:void(0)' onclick='closeNav();openSettings();'>
+                <i class="fa fa-cog"></i>
+              </a>
+              <span class="tooltiptext">Room settings</span>
+            </div>
+          </li>
+          <li>
+            <div class="tooltip">
+              <a href='./settings.html'>
+                <i class="fa fa-cogs"></i>
+              </a>
+              <span class="tooltiptext">User settings</span>
+            </div>
+          </li>
+          <li>
+            <div class="tooltip">
+              <a>
+                <i>
+                  <span onclick='logout();'>
+                    <span class="fa fa-sign-out"></span>
+                  </span>
+              </a>
+              </i>
+              <span class="tooltiptext">Log out</span>
+            </div>
+          </li>
+        </ul>
+      </nav>
+      <!--End of visible sidebar-->
+      </div>
+      </div>
+      <!--Start of messages, text box, and what room you are connected to-->
+      <div id='msgs'></div>
+      <form id='msgForm' onsubmit="return false">
+        <input id='msgSender' autocomplete="off" autofocus />
+        <button class="sender" onclick="sendMsg()">Send</button>
+      </form>
+      <br>
+       <!----><div class="accent"><span style='position:fixed;bottom:0;font-height:8px'>Connected to <span id='roomname'>Lobby</span> | <span id='roomid'>lobby</span>
+      </span></div>
+      <!--End of messages, text box, and what room you are connected to-->
+    </div>
+  </body>
+  <script src='/js/themechanger.js'></script>
+  <script src='/js/includehtml.js'></script>
+  <script src='/js/chat.js'></script>
+</html>

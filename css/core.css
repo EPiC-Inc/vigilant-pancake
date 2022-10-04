@@ -1,0 +1,155 @@
+.material-symbols-outlined {
+	font-variation-settings: 'FILL' 0,
+ 'wght' 400,
+ 'GRAD' 0,
+ 'opsz' 48;
+}
+*:focus {
+	outline: none;
+}
+a {
+  text-decoration: none;
+	transition-duration: .3s;
+}
+.accent {
+  position: absolute;
+	right: 200px;
+}
+button {
+  border: none;
+	border-radius: 2px;
+	cursor: pointer;
+	display: inline-block;
+	font-size: 16px;
+	margin-bottom: auto;
+	margin-left: 32px;
+	margin-right: 32px;
+	margin-top: auto;
+	padding: 15px 32px;
+	text-align: center;
+	transition-duration: .3s;
+}
+body {
+	margin: 0;
+  
+}
+.center {
+	text-align: center;
+}
+#content {
+	margin-bottom: 80px;
+	margin-left: 1%;
+	margin-top: 80px;
+}
+#content button {
+	margin-left: 32px;
+}
+form input{
+  border-radius: 0px;
+	font-size: 24px;
+	height: 32px;
+	margin: 8px 0;
+	padding: 12px 20px;
+	width: 384px;
+}
+header {
+	font-size: 48px;
+	padding-left: 20px;
+	position: fixed;
+	top: 0;
+	width: 100%;
+}
+header button {
+	font-size: 24px;
+	height: 48px;
+	margin-top: -24px;
+	padding-bottom: 4px;
+	position: absolute;
+	top: 50%;
+}
+header .right {
+	float: right;
+	right: 2%;
+}
+#login input {
+  border-radius: 24px;
+	font-size: 24px;
+	height: 32px;
+	padding: 0px 8px;
+	width: 384px;
+}
+.logout {
+	bottom: 61px;
+	position: absolute;
+	right: 700px;
+}
+.msg {
+	font-size: 20px;
+	word-break: break-all;
+}
+#msgForm {
+	bottom: 0;
+	margin-bottom: 16px;
+	padding: 4px 0px;
+	position: fixed;
+	width: 100%;
+}
+#msgForm button {
+	margin-left: 0;
+}
+#msgSender {
+	border-radius: 2px;
+	font-size: 20px;
+	margin-right: .5%;
+	padding: 4px 8px;
+	width: 50%;
+  height: 40px;
+}
+#msgSender:active, textarea:focus, input:focus, #msgSender:focus {
+	border:0px solid;
+	outline: none;
+}
+.sidenav {
+	font-size: 25px;
+	height: 100%;
+	overflow-x: hidden;
+	padding-top: 60px;
+	position: fixed;
+	top: 0;
+	transition: 0.5s;
+	width: 250px;
+	z-index: 1;
+}
+.sidenav * {
+	margin-left: 32px;
+}
+.sidenav a {
+	display: block;
+	font-size: 25px;
+	padding: 8px 8px 8px 16px;
+	transition: 0.3s;
+}
+.sidenav .backbtn {
+	font-size: 36px;
+	left: -16px;
+	margin-left: 50px;
+	position: absolute;
+	top: 0;
+}
+.sidenav .closebtn {
+	font-size: 36px;
+	margin-left: 50px;
+	position: absolute;
+	right: 25px;
+	top: 0;
+}
+.sidenav div {
+	margin-bottom: 64px;
+	margin-left: 0px;
+}
+.sidenav-left {
+	left: -250px;
+}
+.sidenav-right {
+	right: -250px;
+}
