@@ -1,0 +1,41 @@
+* {
+    --color-background: #1c1c1f;
+    --color-secondary: #d0d0d0;
+    --color-tertiary: #efefef;
+    --color-accent: #83a784;
+    --font-color: #808080;
+    --button-hover: #3f3f43;
+    --button-basic: #2f2f33;
+    font-family: 'Open Sans', sans-serif;
+    color: var(--font-color);
+}
+a {
+	color: var(--color-accent);
+}
+a:hover {
+	color: var(--button-hover);
+}
+body {
+    background-color:var(--color-background);
+}
+button {
+	background-color: var(--button-basic);
+	color: var(--font-color);
+}
+button:hover {
+	background: var(--button-hover);
+}
+.label_login {
+    color:var(--color-tertiary);
+}
+form input {
+	background-color: var(--color-tertiary);
+    color:var(--font-color);
+}
+p {
+	border-bottom-style: solid;
+	border-width: 1px;
+}
+.scroll-left {
+	color: var(--font-color);
+}

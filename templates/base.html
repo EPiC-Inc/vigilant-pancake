@@ -2,11 +2,15 @@
 <html>
     <head>
         {% block favicon %}
-        <!--link rel="shortcut icon" href="http://example.com/myicon.ico" /-->
+        <!--link rel="shortcut icon" href="http://example.com/myicon.ico" /--> 
         <link rel="icon" type="image/png" href="/favicon.png" />
         {% end %}
-        
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400&family=Open+Sans:wght@300;400&display=swap" rel="stylesheet"> 
         <link rel="stylesheet" href="style.css">
+        <link id='theme' rel="stylesheet" href="style-dark.css">
         <title>{% block title %}NORSE{% end %}</title>
     </head>
 
@@ -15,4 +19,41 @@
     {% end %}</body>
 
     {% block afterbody %}{% end %}
+    <script>
+        function getCookie(cname) {
+            var name = cname + "=";
+            var decodedCookie = decodeURIComponent(document.cookie);
+            var ca = decodedCookie.split(';');
+            for(var i = 0; i < ca.length; i++) {
+                var c = ca[i];
+                while (c.charAt(0) == ' ') {
+                    c = c.substring(1);
+                }
+                if (c.indexOf(name) == 0) {
+                    return c.substring(name.length, c.length);
+                }
+            }
+            return "";
+        }
+
+        if (getCookie('theme')) {
+            document.getElementById('theme').setAttribute('href', getCookie('theme'));
+        }
+     
+function swapStyleSheet(theme){
+    theme = 'style-'+theme+'.css';
+    document.cookie='theme='+theme;
+	document.getElementById('theme').setAttribute('href',theme);
+    
+}
+        
+
+
+        // How to set a theme:
+            // var theme = "dark";
+        // And then run these:
+            // theme = 'style-'+theme+'.css';
+            // document.cookie='theme='+theme;
+            // document.getElementById('theme').setAttribute('href', theme);
+    </script>
 </html>

@@ -4,9 +4,11 @@
 <div class='center'>
     <span id='error'>{{ message }}</span>
 <form id="login" method='post'>
-    <label class="label_login">LOGIN:</label><br>
+    <label class="label_login">SIGNUP:</label><br>
     <input id='u' type="text" placeholder="Username:" name="username" required><br>
-    <input id='p' type="password" placeholder="Password:" name="password" required>
+    <br style='height:8%;'>
+    <input id='p' type="password" placeholder="Password:" name="password" required><br>
+    <input id='p2' type="password" placeholder="Repeat:" name="password" required>
     <input type="submit" style="display:none;" />
 </form>
 </div>
@@ -21,7 +23,8 @@
         for (var i in e) el.addEventListener(e[i],resize,false);
         resize();
     }
-    resizable(document.getElementById('u'), .8);//14.2);
+    resizable(document.getElementById('u'), .7);//14.2);
     resizable(document.getElementById('p'), .75);//14.2);
+    resizable(document.getElementById('p2'), .75);//14.2);
 </script>
 {% end %}

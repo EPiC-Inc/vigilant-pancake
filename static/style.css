@@ -1,0 +1,57 @@
+.center {
+    text-align: center;
+    margin: 0;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.label_login{
+    padding:8px;
+    font-size: 28px;
+}
+p {
+	border-bottom-style: solid;
+	border-width: 1px;
+}
+textarea:focus, input:focus{
+    outline: none;
+}
+form input {
+    height: 45px;
+    min-width: 164px !important;
+    max-width: 80% !important;
+    transition: width 0.25s ease-out;
+    border-radius: 5px;
+    border: 0px;
+	margin:8px;
+    font-size: 24px;
+    padding: 0px;
+    font-family: 'Montserrat', sans-serif;
+    text-align: center;
+}
+@keyframes scroll-left {
+0% {
+	transform:translateX(70%);
+}
+100% {
+	transform:translateX(-70%);
+}
+}
+.scroll-left {
+	height: 50px;
+	overflow: hidden;
+	position:relative;
+}
+.scroll-left p {
+    font-size:32px;
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	line-height: 50px;
+	text-align: center;
+	transform:translateX(70%);
+	animation: scroll-left 15s linear infinite;
+}

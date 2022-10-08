@@ -42,11 +42,17 @@ def get_session(token):
         return None
 
 def set_session(old_token=None):
+    # Kill old session if needed
     if old_token and get_session(old_token):
         del sessions[old_token]
     new_token = str(uuid.uuid4()).encode('ascii')
     sessions[new_token] = Session()
     return new_token
+
+def login(username, password):
+    if username=="test" and password=="test":
+        return True
+    return False
 
 
 ###ANCHOR: Handlers
@@ -75,26 +81,28 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
 
 
 class LoginHandler(BaseHandler):
-    def get(self):
-        session_token = self.get_secure_cookie("session")
-        if not session_token:
-            self.set_secure_cookie("session", set_session())
-            self.write("Your cookie was not set yet!")
-
-        elif not get_session(session_token):
-            self.set_secure_cookie("session", set_session())
-            self.write("You have no valid session!")
-
+    def get(self, signup=False):
+        if signup:
+            self.render("signup.html", message='')
         else:
-            self.write("You're in a valid session!")
-    
+            self.render("login.html", message='')
+
     def post(self):
+        username = self.get_argument('username')
+        password = self.get_argument('password')
+        #TODO: do actual credential checking
         # Check credentials
-        if valid_creds: # type: ignore
+        if login(username, password):
             session_token = self.get_secure_cookie("session")
+            self.set_secure_cookie("session", set_session())
             set_session(session_token)
+            if self.get_argument('next', None):
+                self.redirect(self.get_argument('next'))
+            else:
+                self.redirect('/')
+            #TODO: redirect user
         else:
-            pass
+            self.render("login.html", message='Wrong username or password')
 
 class CommsHandler(BaseHandler):
     @tornado.web.authenticated
@@ -102,25 +110,10 @@ class CommsHandler(BaseHandler):
         self.write('comms go here')
         pass
 
-class MainHandler(BaseHandler):
+class SettingsHandler(BaseHandler):
+    #@tornado.web.authenticated
     def get(self):
-        self.render("index.html")
-        return
-        session_token = self.get_secure_cookie("session")
-        if not session_token:
-            session_token = str(uuid.uuid4()).encode('ascii')
-            self.set_secure_cookie("session", str(uuid.uuid4()))
-            self.write("Your cookie was not set yet!")
-            sessions[session_token] = Session()
-
-        elif not get_session(session_token):
-            session_token = str(uuid.uuid4()).encode('ascii')
-            self.set_secure_cookie("session", session_token)
-            self.write("You have no valid session!")
-            sessions[session_token] = Session()
-
-        else:
-            self.write("You're in a valid session!")
+        self.render("settings.html")
 
 class ErrorHandler(BaseHandler):
     def prepare(self):
@@ -130,6 +123,11 @@ class ErrorHandler(BaseHandler):
         status_code = self.get_status()
         self.render("404.html", error_info=status_code)
 
+class MainHandler(BaseHandler):
+    def get(self):
+        self.render("index.html")
+
+
 
 ### Routing
 def make_app():
@@ -137,10 +135,15 @@ def make_app():
         # these are all regex. makes sense? eh kinda
         ('/', MainHandler),
         ('/(favicon.png)', tornado.web.StaticFileHandler, {'path':'static'}),
+        #style.css
+        #style-dark.css
+        #style-light.css
         ('/(style.*\.css)', tornado.web.StaticFileHandler, {'path':'static'}),
         ('/login', LoginHandler),
+        ('/(signup)', LoginHandler),
         ('/comms', CommsHandler),
         ('/comms/(.*)', CommsHandler),
+        ('/settings', SettingsHandler),
 
         ('/echo/(.*)', SocketHandler),
         ('/echo', SocketHandler),
@@ -153,7 +156,6 @@ def make_app():
     #default_handler_args = {'status_code': 404},
     compiled_template_cache = False, #TEMP
     )
-
 
 
 

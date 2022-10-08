@@ -1,3 +1,3 @@
 # NOrSe
-A complete redo of... well, everything lol
-ignore the name
+Novus Ordo Seclorum
+A 
