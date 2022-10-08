@@ -12,11 +12,13 @@ import tornado.websocket
 
 ###ANCHOR: Global variables
 sessions = {}
-
+rooms = {}
+#TODO: load users
 
 ###ANCHOR: Classes
 class User:
-    pass
+    def __init__(self, id):
+        pass
 
 class Session:
     def __init__(self, user=None):
@@ -53,9 +55,16 @@ class BaseHandler(tornado.web.RequestHandler):
         session_token = self.get_secure_cookie("session")
         return get_session(session_token)
 
-class EchoWebSocket(BaseHandler):
-    def open(self):
-        print("WebSocket opened")
+class SocketHandler(tornado.websocket.WebSocketHandler):
+    def get_current_user(self):
+        session_token = self.get_secure_cookie("session")
+        return get_session(session_token)
+
+    def open(self, command=None):
+        if not self.get_current_user():
+            self.close()
+            return
+        print("WebSocket opened with command", command)
 
     def on_message(self, message):
         self.write_message(u"You said: " + message)
@@ -89,7 +98,7 @@ class LoginHandler(BaseHandler):
 
 class CommsHandler(BaseHandler):
     @tornado.web.authenticated
-    def get(self):
+    def get(self, room=None):
         self.write('comms go here')
         pass
 
@@ -113,20 +122,35 @@ class MainHandler(BaseHandler):
         else:
             self.write("You're in a valid session!")
 
+class ErrorHandler(BaseHandler):
+    def prepare(self):
+        self.set_status(404)
 
+    def write_error(self, status_code=404, exc_info=None):
+        status_code = self.get_status()
+        self.render("404.html", error_info=status_code)
 
 
 ### Routing
 def make_app():
     return tornado.web.Application([
+        # these are all regex. makes sense? eh kinda
         ('/', MainHandler),
+        ('/(favicon.png)', tornado.web.StaticFileHandler, {'path':'static'}),
+        ('/(style.*\.css)', tornado.web.StaticFileHandler, {'path':'static'}),
         ('/login', LoginHandler),
-        ('/comms*', CommsHandler),
+        ('/comms', CommsHandler),
+        ('/comms/(.*)', CommsHandler),
+
+        ('/echo/(.*)', SocketHandler),
+        ('/echo', SocketHandler),
     ],
     ### Options
     cookie_secret = "da6f7af0-8f13-489e-9573-4708037b97e5",
     login_url = "/login",
     template_path = "templates",
+    default_handler_class = ErrorHandler,
+    #default_handler_args = {'status_code': 404},
     compiled_template_cache = False, #TEMP
     )
 
