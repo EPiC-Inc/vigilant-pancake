@@ -226,7 +226,7 @@ def make_app():
 ### Start server
 async def main():
     app = make_app()
-    app.listen(8080)
+    app.listen(int(os.environ['PORT']) if os.environ.get('PORT') else 8080)
     await asyncio.Event().wait()
 
 if __name__ == "__main__":
