@@ -1,9 +1,10 @@
 # imports
 import asyncio
+import bcrypt
 import datetime as dt
+import json
 import os
 import uuid
-from requests import session
 
 import tornado.escape
 import tornado.locks
@@ -11,8 +12,12 @@ import tornado.web
 import tornado.websocket
 
 ###ANCHOR: Global variables
-sessions = {}
-rooms = {}
+SESSIONS = {}
+ROOMS = {}
+USERS_FILE = "users.json"
+USERS = {}
+with open(USERS_FILE) as json_file:
+    USERS = json.load(json_file)
 #TODO: load users
 
 ###ANCHOR: Classes
@@ -32,29 +37,51 @@ class Session:
 
 ###ANCHOR: Functions
 def get_session(token):
-    session = sessions.get(token)
+    session = SESSIONS.get(token)
     if not session:
         return None
     if session.validate():
         return session
     else:
-        del sessions[token]
+        del SESSIONS[token]
         return None
 
 def set_session(old_token=None):
     # Kill old session if needed
     if old_token and get_session(old_token):
-        del sessions[old_token]
+        del SESSIONS[old_token]
     new_token = str(uuid.uuid4()).encode('ascii')
-    sessions[new_token] = Session()
+    SESSIONS[new_token] = Session()
     return new_token
 
 def login(username, password):
-    if username=="test" and password=="test":
-        return True
-    return False
+    user = USERS.get(username, None)
+    if not user:
+        return (False, "User not found")
+    if bcrypt.checkpw(password, user.get('password')):
+        return (True, "Login successful")
+    return (False, "Password incorrect")
 
-#def create_user(id, password, display_name=None, pfp_link=None, global_role=0)
+def save_user(user=None):
+    ''' this is terrible and should be replaced with a database asap '''
+    with open(USERS_FILE, 'w') as outfile:
+        json.dump(USERS, outfile)
+
+def create_user(id, password, confirm_password, oauth=False, display_name=None, pfp_link=None, global_role=0):
+    if id in USERS:
+        return (False, "User ID already in use")
+    if password != confirm_password:
+        return (False, "Passwords do not match")
+    user = {
+        "password": bcrypt.hashpw(password, bcrypt.gensalt()),
+        "oauth": oauth,
+        "display_name": display_name if display_name else id,
+        "pfp_link": None,
+        "global_role": global_role,
+    }
+    USERS[id] = user
+    save_user()
+    return (True, "User created")
 
 
 ###ANCHOR: Handlers
@@ -89,22 +116,33 @@ class LoginHandler(BaseHandler):
         else:
             self.render("login.html", message='')
 
-    def post(self):
+    def post(self, signup=False):
         username = self.get_argument('username')
         password = self.get_argument('password')
+        old_token = self.get_secure_cookie("session")
+        self.set_secure_cookie("session", set_session(old_token))
+        if signup:
+            success, message = create_user(username, password, self.get_argument('password-repeat'))
+            if not success:
+                self.render("signup.html", message=message)
+                return
+            old_token = self.get_secure_cookie("session")
+            self.set_secure_cookie("session", set_session(old_token))
+            self.redirect('/comms')
+            return
         #TODO: do actual credential checking
         # Check credentials
-        if login(username, password):
-            session_token = self.get_secure_cookie("session")
-            self.set_secure_cookie("session", set_session())
-            set_session(session_token)
+        success, message = login(username, password)
+        if success:
             if self.get_argument('next', None):
                 self.redirect(self.get_argument('next'))
             else:
                 self.redirect('/')
-            #TODO: redirect user
         else:
-            self.render("login.html", message='Wrong username or password')
+            self.render("login.html", message=message)
+
+    def put(self):
+        self.write('success')
 
 class CommsHandler(BaseHandler):
     @tornado.web.authenticated
@@ -126,9 +164,11 @@ class ErrorHandler(BaseHandler):
         self.render("404.html", error_info=status_code)
 
 class MainHandler(BaseHandler):
-    def get(self):
-        self.render("index.html")
-
+    def get(self, page=None):
+        if page:
+            self.render(str(page)+".html")
+        else:
+            self.render("index.html")
 
 
 ### Routing
@@ -141,12 +181,12 @@ def make_app():
         #style-dark.css
         #style-light.css
         ('/(style.*\.css)', tornado.web.StaticFileHandler, {'path':'static'}),
+        ('/(announcements)', MainHandler),
         ('/login', LoginHandler),
         ('/(signup)', LoginHandler),
         ('/comms', CommsHandler),
         ('/comms/(.*)', CommsHandler),
         ('/settings', SettingsHandler),
-
         ('/echo/(.*)', SocketHandler),
         ('/echo', SocketHandler),
     ],
