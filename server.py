@@ -107,16 +107,16 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
 
     def open(self, room="lobby"):
         if not ROOMS.get(room):
-            ROOMS[room] = {}
-        ROOMS[room][self] = "Active"
+            ROOMS[room] = set()
+        ROOMS[room].add(self)
         self.room = room
-        print(ROOMS)
+        #print(ROOMS)#TEMP
         if not self.get_current_user():
             self.close()
             return
         user = self.get_current_user().user.properties #type: ignore
-        print(user)
-        print("WebSocket opened with command", room)
+        #print(user)#TEMP
+        print("WebSocket opened with command", room)#TEMP
 
     def on_message(self, message):
         if not message:
@@ -126,8 +126,8 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
             user.write_message(u"You said: " + str(message))
 
     def on_close(self):
-        del ROOMS[self.room][self]
-        print("WebSocket closed")
+        ROOMS[self.room].remove(self)
+        print("WebSocket closed")#TEMP
 
 class LoginHandler(BaseHandler):
     def get(self, signup=False):

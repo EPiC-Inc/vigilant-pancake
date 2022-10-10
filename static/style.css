@@ -1,5 +1,6 @@
  * {
-     font-family: 'Open Sans', sans-serif;
+    font-family: 'Open Sans', sans-serif;
+    margin:0;
 }
  .center {
     text-align: center;
@@ -42,7 +43,7 @@
  textarea:focus, input:focus{
      outline: none;
 }
- form input {
+ form input.login {
      height: 45px;
      min-width: 164px !important;
      max-width: 80% !important;
@@ -83,16 +84,20 @@
      border-bottom-style: solid;
      border-width: 1px;
 }
+
  span{
      font-family: 'Open Sans', sans-serif;
 }
+
  .settings{
      font-family: 'Open Sans', sans-serif;
-     .clocker {
-         font-family: 'Open Sans', sans-serif;
-         font-size: 25px;
-         letter-spacing: 7px;
-    }
+ }
+
+ .clocker {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 25px;
+    letter-spacing: 7px;
+}
 
 .material-symbols-outlined {
   font-variation-settings:
@@ -100,4 +105,8 @@
   'wght' 400,
   'GRAD' 0,
   'opsz' 48
+}
+
+#msgbox {
+    width: 100%;
 }
