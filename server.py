@@ -5,6 +5,7 @@ import json
 import os
 import pickle
 import uuid
+from types import SimpleNamespace
 
 import bcrypt
 import tornado.escape
@@ -24,10 +25,12 @@ except:
     pass
 #TODO: load users
 
+
+
 ###ANCHOR: Classes
 class User:
     def __init__(self, id):
-        pass
+        self.properties = SimpleNamespace(**USERS.get(id))  # type: ignore
 
 class Session:
     def __init__(self, user=None):
@@ -39,8 +42,10 @@ class Session:
         return self.valid_until > dt.datetime.now()
 
 
+
 ###ANCHOR: Functions
 def get_session(token):
+    #print("Checking session")
     session = SESSIONS.get(token)
     if not session:
         return None
@@ -50,12 +55,12 @@ def get_session(token):
         del SESSIONS[token]
         return None
 
-def set_session(old_token=None):
+def set_session(username, old_token=None):
     # Kill old session if needed
     if old_token and get_session(old_token):
         del SESSIONS[old_token]
     new_token = str(uuid.uuid4()).encode('ascii')
-    SESSIONS[new_token] = Session()
+    SESSIONS[new_token] = Session(user=User(username))
     return new_token
 
 def login(username, password):
@@ -88,6 +93,7 @@ def create_user(id, password, confirm_password, oauth=False, display_name=None, 
     return (True, "User created")
 
 
+
 ###ANCHOR: Handlers
 class BaseHandler(tornado.web.RequestHandler):
     def get_current_user(self):
@@ -99,19 +105,29 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
         session_token = self.get_secure_cookie("session")
         return get_session(session_token)
 
-    def open(self, command=None):
+    def open(self, room="lobby"):
+        if not ROOMS.get(room):
+            ROOMS[room] = {}
+        ROOMS[room][self] = "Active"
+        self.room = room
+        print(ROOMS)
         if not self.get_current_user():
             self.close()
             return
-        print("WebSocket opened with command", command)
+        user = self.get_current_user().user.properties #type: ignore
+        print(user)
+        print("WebSocket opened with command", room)
 
     def on_message(self, message):
-        self.write_message(u"You said: " + str(message))
+        if not message:
+            return
+        #TODO: Construct message
+        for user in ROOMS[self.room]:
+            user.write_message(u"You said: " + str(message))
 
     def on_close(self):
+        del ROOMS[self.room][self]
         print("WebSocket closed")
-
-
 
 class LoginHandler(BaseHandler):
     def get(self, signup=False):
@@ -123,25 +139,22 @@ class LoginHandler(BaseHandler):
     def post(self, signup=False):
         username = self.get_argument('username')
         password = self.get_argument('password')
-        old_token = self.get_secure_cookie("session")
-        self.set_secure_cookie("session", set_session(old_token))
         if signup:
             success, message = create_user(username, password, self.get_argument('password-repeat', None))
             if not success:
                 self.render("signup.html", message=message)
                 return
             old_token = self.get_secure_cookie("session")
-            self.set_secure_cookie("session", set_session(old_token))
+            self.set_secure_cookie("session", set_session(username, old_token))
             self.redirect('/comms')
             return
         #TODO: do actual credential checking
         # Check credentials
         success, message = login(username, password)
         if success:
-            if self.get_argument('next', None):
-                self.redirect(self.get_argument('next'))
-            else:
-                self.redirect('/')
+            old_token = self.get_secure_cookie("session")
+            self.set_secure_cookie("session", set_session(username, old_token))
+            self.redirect(self.get_argument('next', '/'))
         else:
             self.render("login.html", message=message)
 
@@ -151,8 +164,7 @@ class LoginHandler(BaseHandler):
 class CommsHandler(BaseHandler):
     @tornado.web.authenticated
     def get(self, room=None):
-        self.write('comms go here')
-        pass
+        self.render('comms.html', room=room)
 
 class SettingsHandler(BaseHandler):
     #@tornado.web.authenticated
@@ -169,10 +181,15 @@ class ErrorHandler(BaseHandler):
 
 class MainHandler(BaseHandler):
     def get(self, page=None):
+        #print(self.get_current_user())
         if page:
             self.render(str(page)+".html")
         else:
+            if self.get_current_user():
+                self.render('index_logged_in.html')
+                return
             self.render("index.html")
+
 
 
 ### Routing
@@ -180,6 +197,7 @@ def make_app():
     return tornado.web.Application([
         # these are all regex. makes sense? eh kinda
         ('/', MainHandler),
+        ('/home', MainHandler),
         ('/(favicon.png)', tornado.web.StaticFileHandler, {'path':'static'}),
         #style.css
         #style-dark.css

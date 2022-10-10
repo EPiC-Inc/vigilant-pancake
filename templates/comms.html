@@ -1,4 +1,25 @@
 {% extends "base.html" %}
-{% block afterbody %}<script>
 
+{% block body %}
+<header></header>
+<div id='messages'></div>
+<form action="javascript:void(0);" onsubmit="sendMessage();" autocomplete="off">
+    <input id='msgbox' type="text" />
+</form>
+{% end %}
+
+{% block afterbody %}<script>
+ws = new WebSocket("ws://"+window.location.host+"/echo");
+
+function sendMessage() {
+    var msg = document.getElementById('msgbox').value;
+    if (msg) {
+        ws.send(msg);
+    }
+    document.getElementById('msgbox').value = '';
+}
+
+ws.onmessage = (evt) => {
+   alert(evt.data);
+};
 </script>{% end %}
