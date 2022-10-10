@@ -1,11 +1,12 @@
 # imports
 import asyncio
-import bcrypt
 import datetime as dt
 import json
 import os
+import pickle
 import uuid
 
+import bcrypt
 import tornado.escape
 import tornado.locks
 import tornado.web
@@ -14,10 +15,13 @@ import tornado.websocket
 ###ANCHOR: Global variables
 SESSIONS = {}
 ROOMS = {}
-USERS_FILE = "users.json"
+USERS_FILE = "users"
 USERS = {}
-with open(USERS_FILE) as json_file:
-    USERS = json.load(json_file)
+try:
+    with open(USERS_FILE, 'rb') as json_file:
+        USERS = pickle.load(json_file)
+except:
+    pass
 #TODO: load users
 
 ###ANCHOR: Classes
@@ -58,14 +62,14 @@ def login(username, password):
     user = USERS.get(username, None)
     if not user:
         return (False, "User not found")
-    if bcrypt.checkpw(password, user.get('password')):
+    if bcrypt.checkpw(password.encode(), user.get('password')):
         return (True, "Login successful")
     return (False, "Password incorrect")
 
 def save_user(user=None):
     ''' this is terrible and should be replaced with a database asap '''
-    with open(USERS_FILE, 'w') as outfile:
-        json.dump(USERS, outfile)
+    with open(USERS_FILE, 'wb') as outfile:
+        pickle.dump(USERS, outfile, protocol=pickle.HIGHEST_PROTOCOL)
 
 def create_user(id, password, confirm_password, oauth=False, display_name=None, pfp_link=None, global_role=0):
     if id in USERS:
@@ -73,7 +77,7 @@ def create_user(id, password, confirm_password, oauth=False, display_name=None, 
     if password != confirm_password:
         return (False, "Passwords do not match")
     user = {
-        "password": bcrypt.hashpw(password, bcrypt.gensalt()),
+        "password": bcrypt.hashpw(password.encode(), bcrypt.gensalt()),
         "oauth": oauth,
         "display_name": display_name if display_name else id,
         "pfp_link": None,
@@ -102,7 +106,7 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
         print("WebSocket opened with command", command)
 
     def on_message(self, message):
-        self.write_message(u"You said: " + message)
+        self.write_message(u"You said: " + str(message))
 
     def on_close(self):
         print("WebSocket closed")
@@ -122,7 +126,7 @@ class LoginHandler(BaseHandler):
         old_token = self.get_secure_cookie("session")
         self.set_secure_cookie("session", set_session(old_token))
         if signup:
-            success, message = create_user(username, password, self.get_argument('password-repeat'))
+            success, message = create_user(username, password, self.get_argument('password-repeat', None))
             if not success:
                 self.render("signup.html", message=message)
                 return
@@ -180,7 +184,7 @@ def make_app():
         #style.css
         #style-dark.css
         #style-light.css
-        ('/(style.*\.css)', tornado.web.StaticFileHandler, {'path':'static'}),
+        ('/(style.*\\.css)', tornado.web.StaticFileHandler, {'path':'static'}),
         ('/(announcements)', MainHandler),
         ('/login', LoginHandler),
         ('/(signup)', LoginHandler),

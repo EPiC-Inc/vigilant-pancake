@@ -6,3 +6,5 @@ venv/
 .env
 replix.nix
 users.json
+users
+.vscode
