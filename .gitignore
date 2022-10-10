@@ -4,3 +4,4 @@ venv/
 .replit
 .breakpoints
 .env
+replix.nix
