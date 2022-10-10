@@ -1,47 +1,44 @@
 * {
-font-family: 'Open Sans', sans-serif;
---color-background: #ECEAE9;
---color-secondary: #d0d0d0;
---color-tertiary: #abababab;
---color-accent: #83a784;
---font-color: #808080;
---button-hover: #bdbdbd;
---button-basic: #cdcdcd;
+     font-family: 'Open Sans', sans-serif;
+     --color-background: #ECEAE9;
+     --color-secondary: #d0d0d0;
+     --color-tertiary: #abababab;
+     --color-accent: #83a784;
+     --font-color: #808080;
+     --button-hover: #bdbdbd;
+     --button-basic: #cdcdcd;
 }
-body {
-    background-color:var(--color-boackground);
+ a {
+     color: var(--color-accent);
 }
-button {
-	background-color: var(--button-basic);
-	color: var(--font-color);
+ a:hover {
+     color: var(--button-hover);
 }
-button:hover {
-	background: var(--button-hover);
+ body {
+     background-color:var(--color-background);
 }
-body {
-    background-color:var(--color-background);
+ button {
+     background-color: var(--button-basic);
+     color: var(--font-color);
 }
-button {
-	background-color: var(--button-basic);
-	color: var(--font-color);
+ button:hover {
+     background: var(--button-hover);
 }
-button:hover {
-	background: var(--button-hover);
+ .label_login {
+     color:var(--color-tertiary);
 }
-a {
-	color: var(--color-accent);
+ form input {
+     background-color: var(--color-tertiary);
+     color:var(--font-color);
 }
-a:hover {
-	color: var(--button-hover);
+ p {
+     border-bottom-style: solid;
+     border-width: 1px;
 }
-form input {
-	background-color: var(--color-seccondary);
-	border: 1px solid var(--font-color);
-	color:var(--font-color);
+ .scroll-left {
+     color: var(--font-color);
 }
-
-p {
-	border-bottom-style: solid;
-	border-width: 1px;
+ .clocker {
+     color:var(--font-color);
 }
-
+ 

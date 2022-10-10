@@ -1,3 +1,1 @@
-# NOrSe
-Novus Ordo Seclorum
-A 
+# norse ig

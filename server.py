@@ -54,6 +54,8 @@ def login(username, password):
         return True
     return False
 
+#def create_user(id, password, display_name=None, pfp_link=None, global_role=0)
+
 
 ###ANCHOR: Handlers
 class BaseHandler(tornado.web.RequestHandler):

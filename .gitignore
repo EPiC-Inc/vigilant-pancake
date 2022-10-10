@@ -3,3 +3,4 @@ pyproject.toml
 venv/
 .replit
 .breakpoints
+.env
