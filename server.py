@@ -7,7 +7,7 @@ import pickle
 import uuid
 from types import SimpleNamespace
 
-import bcrypt
+#import bcrypt
 import tornado.escape
 import tornado.locks
 import tornado.web
