@@ -1,24 +1,36 @@
 # imports
 import asyncio
 import datetime as dt
+import json
 import os
+import pickle
 import uuid
-from requests import session
+from types import SimpleNamespace
 
+import bcrypt
 import tornado.escape
 import tornado.locks
 import tornado.web
 import tornado.websocket
 
 ###ANCHOR: Global variables
-sessions = {}
-rooms = {}
+SESSIONS = {}
+ROOMS = {}
+USERS_FILE = "users"
+USERS = {}
+try:
+    with open(USERS_FILE, 'rb') as json_file:
+        USERS = pickle.load(json_file)
+except:
+    pass
 #TODO: load users
+
+
 
 ###ANCHOR: Classes
 class User:
     def __init__(self, id):
-        pass
+        self.properties = SimpleNamespace(**USERS.get(id))  # type: ignore
 
 class Session:
     def __init__(self, user=None):
@@ -30,31 +42,56 @@ class Session:
         return self.valid_until > dt.datetime.now()
 
 
+
 ###ANCHOR: Functions
 def get_session(token):
-    session = sessions.get(token)
+    #print("Checking session")
+    session = SESSIONS.get(token)
     if not session:
         return None
     if session.validate():
         return session
     else:
-        del sessions[token]
+        del SESSIONS[token]
         return None
 
-def set_session(old_token=None):
+def set_session(username, old_token=None):
     # Kill old session if needed
     if old_token and get_session(old_token):
-        del sessions[old_token]
+        del SESSIONS[old_token]
     new_token = str(uuid.uuid4()).encode('ascii')
-    sessions[new_token] = Session()
+    SESSIONS[new_token] = Session(user=User(username))
     return new_token
 
 def login(username, password):
-    if username=="test" and password=="test":
-        return True
-    return False
+    user = USERS.get(username, None)
+    if not user:
+        return (False, "User not found")
+    if bcrypt.checkpw(password.encode(), user.get('password')):
+        return (True, "Login successful")
+    return (False, "Password incorrect")
 
-#def create_user(id, password, display_name=None, pfp_link=None, global_role=0)
+def save_user(user=None):
+    ''' this is terrible and should be replaced with a database asap '''
+    with open(USERS_FILE, 'wb') as outfile:
+        pickle.dump(USERS, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+
+def create_user(id, password, confirm_password, oauth=False, display_name=None, pfp_link=None, global_role=0):
+    if id in USERS:
+        return (False, "User ID already in use")
+    if password != confirm_password:
+        return (False, "Passwords do not match")
+    user = {
+        "password": bcrypt.hashpw(password.encode(), bcrypt.gensalt()),
+        "oauth": oauth,
+        "display_name": display_name if display_name else id,
+        "pfp_link": None,
+        "global_role": global_role,
+    }
+    USERS[id] = user
+    save_user()
+    return (True, "User created")
+
 
 
 ###ANCHOR: Handlers
@@ -68,19 +105,29 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
         session_token = self.get_secure_cookie("session")
         return get_session(session_token)
 
-    def open(self, command=None):
+    def open(self, room="lobby"):
+        if not ROOMS.get(room):
+            ROOMS[room] = {}
+        ROOMS[room][self] = "Active"
+        self.room = room
+        print(ROOMS)
         if not self.get_current_user():
             self.close()
             return
-        print("WebSocket opened with command", command)
+        user = self.get_current_user().user.properties #type: ignore
+        print(user)
+        print("WebSocket opened with command", room)
 
     def on_message(self, message):
-        self.write_message(u"You said: " + message)
+        if not message:
+            return
+        #TODO: Construct message
+        for user in ROOMS[self.room]:
+            user.write_message(u"You said: " + str(message))
 
     def on_close(self):
+        del ROOMS[self.room][self]
         print("WebSocket closed")
-
-
 
 class LoginHandler(BaseHandler):
     def get(self, signup=False):
@@ -89,28 +136,35 @@ class LoginHandler(BaseHandler):
         else:
             self.render("login.html", message='')
 
-    def post(self):
+    def post(self, signup=False):
         username = self.get_argument('username')
         password = self.get_argument('password')
+        if signup:
+            success, message = create_user(username, password, self.get_argument('password-repeat', None))
+            if not success:
+                self.render("signup.html", message=message)
+                return
+            old_token = self.get_secure_cookie("session")
+            self.set_secure_cookie("session", set_session(username, old_token))
+            self.redirect('/comms')
+            return
         #TODO: do actual credential checking
         # Check credentials
-        if login(username, password):
-            session_token = self.get_secure_cookie("session")
-            self.set_secure_cookie("session", set_session())
-            set_session(session_token)
-            if self.get_argument('next', None):
-                self.redirect(self.get_argument('next'))
-            else:
-                self.redirect('/')
-            #TODO: redirect user
+        success, message = login(username, password)
+        if success:
+            old_token = self.get_secure_cookie("session")
+            self.set_secure_cookie("session", set_session(username, old_token))
+            self.redirect(self.get_argument('next', '/'))
         else:
-            self.render("login.html", message='Wrong username or password')
+            self.render("login.html", message=message)
+
+    def put(self):
+        self.write('success')
 
 class CommsHandler(BaseHandler):
     @tornado.web.authenticated
     def get(self, room=None):
-        self.write('comms go here')
-        pass
+        self.render('comms.html', room=room)
 
 class SettingsHandler(BaseHandler):
     #@tornado.web.authenticated
@@ -126,8 +180,15 @@ class ErrorHandler(BaseHandler):
         self.render("404.html", error_info=status_code)
 
 class MainHandler(BaseHandler):
-    def get(self):
-        self.render("index.html")
+    def get(self, page=None):
+        #print(self.get_current_user())
+        if page:
+            self.render(str(page)+".html")
+        else:
+            if self.get_current_user():
+                self.render('index_logged_in.html')
+                return
+            self.render("index.html")
 
 
 
@@ -136,17 +197,18 @@ def make_app():
     return tornado.web.Application([
         # these are all regex. makes sense? eh kinda
         ('/', MainHandler),
+        ('/home', MainHandler),
         ('/(favicon.png)', tornado.web.StaticFileHandler, {'path':'static'}),
         #style.css
         #style-dark.css
         #style-light.css
-        ('/(style.*\.css)', tornado.web.StaticFileHandler, {'path':'static'}),
+        ('/(style.*\\.css)', tornado.web.StaticFileHandler, {'path':'static'}),
+        ('/(announcements)', MainHandler),
         ('/login', LoginHandler),
         ('/(signup)', LoginHandler),
         ('/comms', CommsHandler),
         ('/comms/(.*)', CommsHandler),
         ('/settings', SettingsHandler),
-
         ('/echo/(.*)', SocketHandler),
         ('/echo', SocketHandler),
     ],

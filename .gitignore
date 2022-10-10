@@ -5,3 +5,6 @@ venv/
 .breakpoints
 .env
 replix.nix
+users.json
+users
+.vscode/

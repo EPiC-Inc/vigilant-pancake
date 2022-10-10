@@ -6,15 +6,21 @@
 <form id="login" method='post'>
     <label class="label_login">LOGIN:</label><br>
     <input id='u' type="text" placeholder="Username:" name="username" required><br>
-    <input id='p' type="password" placeholder="Password:" name="password" required>
-    <input type="submit" style="display:none;" /><br>
-    
+    <input id='p' type="password" placeholder="Password:" name="password" required><br>
+    <input type="submit" value="Login"/><br>
+
 </form>
-<a href="/signup"><button><i class="fa fa-plus" aria-hidden="true"></i>
+<a href="/"><button><span class="material-symbols-outlined">
+home
+</span>
 </button></a>
-    <a href="/"><button style='margin-top:25%;' ><i class="fa fa-home" aria-hidden="true"></i>
-</button></a>
-</div>
+<a href="/signup"><button><span class="material-symbols-outlined">
+person_add
+</span>
+
+</button></a><br><br></div>
+
+
 {% end %}
 
 {% block afterbody %}
@@ -27,6 +33,6 @@
         resize();
     }
     resizable(document.getElementById('u'), .8);//14.2);
-    resizable(document.getElementById('p'), .75);//14.2);
+    resizable(document.getElementById('p'), .62);//14.2);
 </script>
 {% end %}
