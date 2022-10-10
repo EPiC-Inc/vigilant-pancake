@@ -4,16 +4,21 @@
 <div class='center'>
     <span id='error'>{{ message }}</span>
 <form id="login" method='post'>
-    <label class="label_login">SIGNUP:</label><br>
+    <label class="label_login">SIGN UP:</label><br>
     <input id='u' type="text" placeholder="Username:" name="username" required><br>
-    <input style='margin-top:12%;' id='p' type="password" placeholder="Password:" name="password" required><br>
-    <input id='p2' type="password" placeholder="Repeat:" name="password" required>
+    <input style='margin-top:1%;' id='p' type="password" placeholder="Password:" name="password" required><br>
+    <input id='p2' type="password" placeholder="Repeat:" name="password-repeat" required>
     <input type="submit" style="display:none;" /><br>
 </form>
-    <a href="/login"><button><i class="fa fa-sign-in" aria-hidden="true"></i>
+<a href="/"><button><span class="material-symbols-outlined">
+home
+</span>
 </button></a>
-    <a href="/"><button style='margin-top:25%;' ><i class="fa fa-home" aria-hidden="true"></i>
-</button></a>
+<a href="/login"><button><span class="material-symbols-outlined">
+login
+</span>
+
+</button></a><br><br>
 </div>
 {% end %}
 

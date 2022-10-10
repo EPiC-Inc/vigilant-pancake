@@ -10,9 +10,11 @@
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400&family=Open+Sans:wght@300;400&display=swap" rel="stylesheet"> 
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
         <link rel="stylesheet" href="style.css">
         <link id='theme' rel="stylesheet" href="style-dark.css">
         <title>{% block title %}NORSE{% end %}</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
     </head>
 
     <body>{% block body %}
@@ -47,36 +49,11 @@ function swapStyleSheet(theme){
 	document.getElementById('theme').setAttribute('href',theme);
     
 }
-        
-function showTime(){
-    var date = new Date();
-    var h = date.getHours(); // 0 - 23
-    var m = date.getMinutes(); // 0 - 59
-    var s = date.getSeconds(); // 0 - 59
-    var session = "AM";
-    
-    if(h == 0){
-        h = 12;
-    }
-    
-    if(h > 12){
-        h = h - 12;
-        session = "PM";
-    }
-    
-    h = (h < 10) ? "0" + h : h;
-    m = (m < 10) ? "0" + m : m;
-    s = (s < 10) ? "0" + s : s;
-    
-    var time = h + ":" + m + ":" + s + " " + session;
-    document.getElementById("clock").innerText = time;
-    document.getElementById("clock").textContent = time;
-    
-    setTimeout(showTime, 1000);
-    
-}
-
-showTime();
+            function testVariable() {
+            var strText = document.getElementById("textone").value;          
+            var result = strText;
+            document.getElementById('spanResult').textContent = result;
+        }
 
         // How to set a theme:
             // var theme = "dark";
