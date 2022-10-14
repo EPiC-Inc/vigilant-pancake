@@ -6,6 +6,7 @@ import os
 import pickle
 import uuid
 from types import SimpleNamespace
+from html import escape
 
 import bcrypt
 import tornado.escape
@@ -64,6 +65,7 @@ def set_session(username, old_token=None):
     return new_token
 
 def login(username, password):
+    username = username.lower()
     user = USERS.get(username, None)
     if not user:
         return (False, "User not found")
@@ -77,6 +79,7 @@ def save_user(user=None):
         pickle.dump(USERS, outfile, protocol=pickle.HIGHEST_PROTOCOL)
 
 def create_user(id, password, confirm_password, oauth=False, display_name=None, pfp_link=None, global_role=0):
+    id = id.lower()
     if id in USERS:
         return (False, "User ID already in use")
     if password != confirm_password:
@@ -114,16 +117,19 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
         if not self.get_current_user():
             self.close()
             return
-        user = self.get_current_user().user.properties #type: ignore
-        #print(user)#TEMP
+        self.user = self.get_current_user().user.properties #type: ignore
+        #print(self.user)#TEMP
         print("WebSocket opened with command", room)#TEMP
 
     def on_message(self, message):
+        message = message.strip()[:1500]
+        message = escape(str(message))
         if not message:
             return
         #TODO: Construct message
+        message = f"[{self.user.display_name}] {message}"
         for user in ROOMS[self.room]:
-            user.write_message(u"You said: " + str(message))
+            user.write_message(message)
 
     def on_close(self):
         ROOMS[self.room].remove(self)
@@ -169,6 +175,9 @@ class CommsHandler(BaseHandler):
 class SettingsHandler(BaseHandler):
     #@tornado.web.authenticated
     def get(self):
+        self.render("settings.html")
+
+    def post(self):
         self.render("settings.html")
 
 class ErrorHandler(BaseHandler):

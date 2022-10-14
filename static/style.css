@@ -107,6 +107,14 @@
   'opsz' 48
 }
 
-#msgbox {
+.msgform {
     width: 100%;
+    position: absolute;
+    bottom: 0;
+}
+#msgbox {
+    width: 90%;
+    margin: 1% 1%;
+    padding: 0px 8px;
+    font-size: 24px;
 }

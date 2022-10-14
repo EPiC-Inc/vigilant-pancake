@@ -3,8 +3,8 @@
 {% block body %}
 <header></header>
 <div id='messages'></div>
-<form action="javascript:void(0);" onsubmit="sendMessage();" autocomplete="off">
-    <input id='msgbox' type="text" />
+<form class="msgform" action="javascript:void(0);" onsubmit="sendMessage();" autocomplete="off">
+    <input id='msgbox' type="text" autof />
 </form>
 {% end %}
 
@@ -20,6 +20,7 @@ function sendMessage() {
 }
 
 ws.onmessage = (evt) => {
-   alert(evt.data);
+    message = "<div class='msg'>"+evt.data+"</div>";
+    document.getElementById('messages').innerHTML += message;
 };
 </script>{% end %}
