@@ -163,7 +163,7 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
 class LoginHandler(BaseHandler):
     def get(self, signup=False):
         if signup == "signup-twitter":
-            print(self.get_current_user().oauth_id)
+            print(self.get_current_user().oauth_id) # type: ignore
             self.render("__oauth_link_account.html")
             return
         if signup:

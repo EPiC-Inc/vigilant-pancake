@@ -1,2 +1,5 @@
+numpy==1.23.3
+python-dotenv==0.21.0
 python_bcrypt==0.3.2
+requests==2.28.1
 tornado==6.2
