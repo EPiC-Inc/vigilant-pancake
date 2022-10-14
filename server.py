@@ -9,7 +9,6 @@ from html import escape
 from types import SimpleNamespace
 
 import bcrypt
-from numpy import sign
 import requests
 import tornado.auth
 import tornado.escape
