@@ -10,3 +10,4 @@ users
 .vscode/
 .env
 templates/*-policy.html
+oauth_bindings

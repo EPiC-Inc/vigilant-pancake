@@ -7,16 +7,16 @@ import pickle
 import uuid
 from html import escape
 from types import SimpleNamespace
-import requests
 
 import bcrypt
+from numpy import sign
+import requests
 import tornado.auth
 import tornado.escape
 import tornado.locks
 import tornado.web
 import tornado.websocket
 from dotenv import load_dotenv
-from yarg import get
 
 load_dotenv()
 
@@ -24,20 +24,28 @@ load_dotenv()
 SESSIONS = {}
 ROOMS = {}
 USERS_FILE = "users"
+OAUTH_FILE = "oauth_bindings"
 USERS = {}
+OAUTHS = {}
 try:
     with open(USERS_FILE, 'rb') as json_file:
         USERS = pickle.load(json_file)
 except:
     pass
-#TODO: load users
+
+try:
+    with open(OAUTH_FILE, 'rb') as json_file:
+        OAUTHS = pickle.load(json_file)
+except:
+    pass
 
 
 
 ###ANCHOR: Classes
 class User:
     def __init__(self, id):
-        self.properties = SimpleNamespace(**USERS.get(id))  # type: ignore
+        if id:
+            self.properties = SimpleNamespace(**USERS.get(id))  # type: ignore
 
 class Session:
     def __init__(self, user=None):
@@ -77,15 +85,22 @@ def login(username, password, oauth=None):
             user = USERS.get(username, None)
             if not user:
                 return (False, "User not found")
+            if not user.get('password'):
+                return (False, "User has logged in with OAuth but has not set up a password yet.<br>Either that, or something is terribly wrong lol")
             if bcrypt.checkpw(password.encode(), user.get('password')):
                 return (True, "Login successful")
             return (False, "Password incorrect")
-    return (False, "This shouldn't happen - please contact Labs or submit a ticket with error code \'error.auth.missing_case\'")
+        case "twitter":
+            return (False, "not implemented yet lmao")
+    return (False, "This shouldn't happen - please contact Labs or submit a ticket with error code \'auth.missing_case\'")
 
-def save_user(user=None):
+def save_user(oauth=False):
     ''' this is terrible and should be replaced with a database asap '''
     with open(USERS_FILE, 'wb') as outfile:
         pickle.dump(USERS, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+    if oauth:
+        with open(OAUTH_FILE, 'wb') as outfile:
+            pickle.dump(OAUTHS, outfile, protocol=pickle.HIGHEST_PROTOCOL)
 
 def create_user(id, password, confirm_password, oauth=False, display_name=None, pfp_link=None, global_role=0):
     id = id.lower()
@@ -94,7 +109,8 @@ def create_user(id, password, confirm_password, oauth=False, display_name=None, 
     if password != confirm_password:
         return (False, "Passwords do not match")
     user = {
-        "password": bcrypt.hashpw(password.encode(), bcrypt.gensalt()),
+        "password": bcrypt.hashpw(password.encode(), bcrypt.gensalt()) if password else None,
+        # Oauth is stored in the form {'site': user_id,}
         "oauth": oauth,
         "display_name": display_name if display_name else id,
         "pfp_link": None,
@@ -146,6 +162,10 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
 
 class LoginHandler(BaseHandler):
     def get(self, signup=False):
+        if signup == "signup-twitter":
+            print(self.get_current_user().oauth_id)
+            self.render("__oauth_link_account.html")
+            return
         if signup:
             self.render("signup.html", message='')
         else:
@@ -223,6 +243,21 @@ class TwitterLoginHandler(BaseHandler,
             })
             user = str(user.content).split("&")
             user_id=user[2][8:]
+
+            old_token = self.get_secure_cookie("session")
+            new_token = set_session(None,old_token)
+            self.set_secure_cookie("session", new_token)
+            if OAUTHS['twitter'].get(user_id):
+                # Try to login the user
+                success, message = login(OAUTHS['twitter'].get(user_id), None, 'twitter')
+                if success:
+                    get_session(new_token).user = User(user_id) # type: ignore
+                    pass #TODO: finish authentication
+                else:
+                    self.render("login.html", message="This should not be happening. Please contact Labs or submit a ticket with the error code \'oauth.out_of_sync\'")
+            else:
+                get_session(new_token).oauth_id = user_id # type: ignore
+                self.redirect('/signup-twitter')
             #print(user)
             a = self.get_current_user()
             print(a)
@@ -247,6 +282,7 @@ def make_app():
         ('/(announcements)', MainHandler),
         ('/login', LoginHandler),
         ('/(signup)', LoginHandler),
+        ('/(signup-twitter)', LoginHandler),
         ('/comms', CommsHandler),
         ('/comms/(.*)', CommsHandler),
         ('/settings', SettingsHandler),

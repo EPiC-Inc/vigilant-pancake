@@ -43,3 +43,8 @@ p {
 .clocker {
     color:var(--font-color);
 }
+
+button.oauth-twitter {
+    background-color: darkcyan;
+    color: midnightblue;
+}

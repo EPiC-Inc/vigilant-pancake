@@ -8,7 +8,7 @@
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -80%);
+    transform: translate(-50%, -150%);
     /*height:160px;*/
     max-height: 160px;
     display:block;
@@ -20,91 +20,97 @@
      margin: 0;
 }
  button {
-     border: none;
-     border-radius: 2px;
-     cursor: pointer;
-     display: inline-block;
-     font-size: 16px;
-     margin: 5px 5px 5px 5px;
-     padding: 15px;
-     text-align: center;
-     transition-duration: .3s;
-     width: 79px;
-     height:79px 
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    display: inline-block;
+    font-size: 16px;
+    margin: 5px 5px 5px 5px;
+    padding: 15px;
+    text-align: center;
+    transition-duration: .3s;
+    width: 79px;
+    height:79px 
 }
- .label_login{
-     padding:8px;
-     font-size: 28px;
+
+button.oauth {
+    width: auto;
+    padding: 0px 30px;
 }
- p {
-     border-bottom-style: solid;
-     border-width: 1px;
+
+.label_login{
+    padding:8px;
+    font-size: 28px;
 }
- textarea:focus, input:focus{
-     outline: none;
+p {
+    border-bottom-style: solid;
+    border-width: 1px;
 }
- form input.login {
-     height: 45px;
-     min-width: 164px !important;
-     max-width: 80% !important;
-     transition: width 0.25s ease-out;
-     border-radius: 5px;
-     border: 0px;
-     margin: 8px;
-     font-size: 24px;
-     padding: 0px;
-     font-family: 'Montserrat', sans-serif;
-     text-align: center;
+textarea:focus, input:focus{
+    outline: none;
 }
- @keyframes scroll-left {
-     0% {
-         transform:translateX(70%);
+form input.login {
+    height: 45px;
+    min-width: 164px !important;
+    max-width: 80% !important;
+    transition: width 0.25s ease-out;
+    border-radius: 5px;
+    border: 0px;
+    margin: 8px;
+    font-size: 24px;
+    padding: 0px;
+    font-family: 'Montserrat', sans-serif;
+    text-align: center;
+}
+@keyframes scroll-left {
+    0% {
+        transform:translateX(70%);
     }
      100% {
-         transform:translateX(-70%);
+        transform:translateX(-70%);
     }
 }
- .scroll-left {
-     height: 50px;
-     overflow: hidden;
-     position:relative;
-     border-bottom-style: solid;
-     border-width: 1px;
+.scroll-left {
+    height: 50px;
+    overflow: hidden;
+    position:relative;
+    border-bottom-style: solid;
+    border-width: 1px;
 }
- .scroll-left p {
-     font-size:32px;
-     position: absolute;
-     width: 100%;
-     height: 100%;
-     margin: 0;
-     line-height: 50px;
-     text-align: center;
-     transform:translateX(70%);
-     animation: scroll-left 15s linear infinite;
-     border-bottom-style: solid;
-     border-width: 1px;
-}
-
- span{
-     font-family: 'Open Sans', sans-serif;
+.scroll-left p {
+    font-size:32px;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    line-height: 50px;
+    text-align: center;
+    transform:translateX(70%);
+    animation: scroll-left 15s linear infinite;
+    border-bottom-style: solid;
+    border-width: 1px;
 }
 
- .settings{
-     font-family: 'Open Sans', sans-serif;
+span{
+    font-family: 'Open Sans', sans-serif;
+}
+
+.settings{
+    font-family: 'Open Sans', sans-serif;
  }
 
- .clocker {
+.clocker {
     font-family: 'Open Sans', sans-serif;
     font-size: 25px;
     letter-spacing: 7px;
 }
 
 .material-symbols-outlined {
-  font-variation-settings:
-  'FILL' 0,
-  'wght' 400,
-  'GRAD' 0,
-  'opsz' 48
+    font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 48
 }
 
 .msgform {
