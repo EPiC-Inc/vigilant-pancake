@@ -1,18 +1,24 @@
 # imports
 import asyncio
 import datetime as dt
-import json
+#import json
 import os
 import pickle
 import uuid
-from types import SimpleNamespace
 from html import escape
+from types import SimpleNamespace
+import requests
 
 import bcrypt
+import tornado.auth
 import tornado.escape
 import tornado.locks
 import tornado.web
 import tornado.websocket
+from dotenv import load_dotenv
+from yarg import get
+
+load_dotenv()
 
 ###ANCHOR: Global variables
 SESSIONS = {}
@@ -64,14 +70,17 @@ def set_session(username, old_token=None):
     SESSIONS[new_token] = Session(user=User(username))
     return new_token
 
-def login(username, password):
-    username = username.lower()
-    user = USERS.get(username, None)
-    if not user:
-        return (False, "User not found")
-    if bcrypt.checkpw(password.encode(), user.get('password')):
-        return (True, "Login successful")
-    return (False, "Password incorrect")
+def login(username, password, oauth=None):
+    match oauth:
+        case None:
+            username = username.lower()
+            user = USERS.get(username, None)
+            if not user:
+                return (False, "User not found")
+            if bcrypt.checkpw(password.encode(), user.get('password')):
+                return (True, "Login successful")
+            return (False, "Password incorrect")
+    return (False, "This shouldn't happen - please contact Labs or submit a ticket with error code \'error.auth.missing_case\'")
 
 def save_user(user=None):
     ''' this is terrible and should be replaced with a database asap '''
@@ -152,7 +161,7 @@ class LoginHandler(BaseHandler):
                 return
             old_token = self.get_secure_cookie("session")
             self.set_secure_cookie("session", set_session(username, old_token))
-            self.redirect('/comms')
+            self.redirect(self.get_argument('next', '/'))
             return
         #TODO: do actual credential checking
         # Check credentials
@@ -201,12 +210,35 @@ class MainHandler(BaseHandler):
 
 
 
+### OAUTH handlers
+class TwitterLoginHandler(BaseHandler,
+                          tornado.auth.TwitterMixin):
+    async def get(self):
+        if self.get_argument("oauth_token", None) and self.get_argument("oauth_verifier", None):
+            # getting the info the hard way i guess lmao
+            user = requests.post('https://api.twitter.com/oauth/access_token', data={
+                "oauth_consumer_key": os.environ['twitter_consumer_key'],
+                "oauth_token": self.get_argument("oauth_token"),
+                "oauth_verifier": self.get_argument("oauth_verifier"),
+            })
+            user = str(user.content).split("&")
+            user_id=user[2][8:]
+            #print(user)
+            a = self.get_current_user()
+            print(a)
+            # Save the user using e.g. set_secure_cookie()
+        else:
+            await self.authorize_redirect()
+
+
+
 ### Routing
 def make_app():
     return tornado.web.Application([
         # these are all regex. makes sense? eh kinda
         ('/', MainHandler),
         ('/home', MainHandler),
+        ('/(.*-policy)', MainHandler),
         ('/(favicon.png)', tornado.web.StaticFileHandler, {'path':'static'}),
         #style.css
         #style-dark.css
@@ -220,14 +252,18 @@ def make_app():
         ('/settings', SettingsHandler),
         ('/echo/(.*)', SocketHandler),
         ('/echo', SocketHandler),
+
+        ('/login/twitter', TwitterLoginHandler),
     ],
     ### Options
     cookie_secret = "da6f7af0-8f13-489e-9573-4708037b97e5",
     login_url = "/login",
     template_path = "templates",
-    default_handler_class = ErrorHandler,
+    #default_handler_class = ErrorHandler,
     #default_handler_args = {'status_code': 404},
     compiled_template_cache = False, #TEMP
+    twitter_consumer_key=os.environ['twitter_consumer_key'],
+    twitter_consumer_secret=os.environ['twitter_consumer_secret'],
     )
 
 
@@ -235,7 +271,7 @@ def make_app():
 ### Start server
 async def main():
     app = make_app()
-    app.listen(int(os.environ['PORT']) if os.environ.get('PORT') else 8080)
+    app.listen(int(os.environ['PORT']) if os.environ.get('PORT') else 80)
     await asyncio.Event().wait()
 
 if __name__ == "__main__":

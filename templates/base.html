@@ -45,7 +45,7 @@
      
 function swapStyleSheet(theme){
     theme = 'style-'+theme+'.css';
-    document.cookie='theme='+theme;
+    document.cookie='theme='+theme+"; max-age=7776000";
 	document.getElementById('theme').setAttribute('href',theme);
     
 }

@@ -8,3 +8,5 @@ replix.nix
 users.json
 users
 .vscode/
+.env
+templates/*-policy.html

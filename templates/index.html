@@ -5,15 +5,16 @@
 <div class="hor">
 
     
+{% block extra_buttons %}
 <a href="/login"><button><span class="material-symbols-outlined">
-login
-</span>
-</button></a>
-<a href="/signup"><button><span class="material-symbols-outlined">
-person_add
-</span>
-</button></a>
-{% block extra_buttons %}{% end %}
+    login
+    </span>
+    </button></a>
+    <a href="/signup"><button><span class="material-symbols-outlined">
+    person_add
+    </span>
+    </button></a>
+{% end %}
 <a href="https://norse.atlassian.net/servicedesk/customer/portal/1" target="_blank"><button><span class="material-symbols-outlined">
 bug_report
 </span>
