@@ -8,19 +8,6 @@
 </form>
 {% end %}
 
-{% block afterbody %}<script>
-ws = new WebSocket("ws://"+window.location.host+"/echo");
-
-function sendMessage() {
-    var msg = document.getElementById('msgbox').value;
-    if (msg) {
-        ws.send(msg);
-    }
-    document.getElementById('msgbox').value = '';
-}
-
-ws.onmessage = (evt) => {
-    message = "<div class='msg'>"+evt.data+"</div>";
-    document.getElementById('messages').innerHTML += message;
-};
-</script>{% end %}
+{% block afterbody %}
+<script src="js/chat.js"></script>
+{% end %}

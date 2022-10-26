@@ -4,6 +4,7 @@ import datetime as dt
 #import json
 import os
 import pickle
+import random
 import uuid
 from html import escape
 from types import SimpleNamespace
@@ -29,7 +30,7 @@ OAUTHS = {}
 try:
     with open(USERS_FILE, 'rb') as json_file:
         USERS = pickle.load(json_file)
-except:
+except FileNotFoundError:
     pass
 
 try:
@@ -37,6 +38,8 @@ try:
         OAUTHS = pickle.load(json_file)
 except:
     pass
+
+urandom = random.SystemRandom()
 
 
 
@@ -51,6 +54,8 @@ class Session:
         self.valid_until = dt.datetime.now()
         self.valid_until += dt.timedelta(hours=20)
         self.user = user
+        self.key = None
+        self.prime = None
 
     def validate(self):
         return self.valid_until > dt.datetime.now()
@@ -78,9 +83,9 @@ def set_session(username, old_token=None):
     return new_token
 
 def login(username, password, oauth=None):
+    username = username.lower()
     match oauth:
         case None:
-            username = username.lower()
             user = USERS.get(username, None)
             if not user:
                 return (False, "User not found")
@@ -127,7 +132,37 @@ class BaseHandler(tornado.web.RequestHandler):
         session_token = self.get_secure_cookie("session")
         return get_session(session_token)
 
-class SocketHandler(tornado.websocket.WebSocketHandler):
+class DiffieHandler(tornado.websocket.WebSocketHandler):
+    def open(self):
+        print('key channel open')
+        session_token = self.get_secure_cookie("session")
+        self.session = get_session(session_token)
+        # Send "common paint"
+        sharedBase = 12#urandom.randint(100000, 999999)      # g
+        sharedPrime = 17#urandom.randint(100000, 999999)    # p
+        self.prime = sharedPrime
+        key = urandom.randint(100000, 999999)
+
+        # Alice Sends Bob A = g^a mod p
+        A = (sharedBase**key) % sharedPrime
+        self.write_message({'base':sharedBase, 'prime':sharedPrime})
+        self.session.key = key # type: ignore
+        self.mix = A
+
+    def on_message(self, message):
+        print( "\n  Alice Sends Over Public Chanel: " , self.mix)
+        self.write_message({'mix':self.mix, 'prime':self.prime})
+        print( "   Bob Sends Over Public Chanel: ", message )
+        key = int(message) ** self.session.key # type: ignore
+        key = key % self.prime # type: ignore
+        self.session.key = key # type: ignore
+        print( "    Alice Shared Secret: ", self.session.key) # type: ignore
+        self.close()
+
+    def on_close(self):
+        print("key channel closed")
+
+class ChatHandler(tornado.websocket.WebSocketHandler):
     def get_current_user(self):
         session_token = self.get_secure_cookie("session")
         return get_session(session_token)
@@ -171,7 +206,7 @@ class LoginHandler(BaseHandler):
             self.render("login.html", message='')
 
     def post(self, signup=False):
-        username = self.get_argument('username')
+        username = self.get_argument('username').lower()
         password = self.get_argument('password')
         if signup:
             success, message = create_user(username, password, self.get_argument('password-repeat', None))
@@ -278,6 +313,7 @@ def make_app():
         #style-dark.css
         #style-light.css
         ('/(style.*\\.css)', tornado.web.StaticFileHandler, {'path':'static'}),
+        ('/js/(.*\\.js)', tornado.web.StaticFileHandler, {'path':'static\\js'}),
         ('/(announcements)', MainHandler),
         ('/login', LoginHandler),
         ('/(signup)', LoginHandler),
@@ -285,8 +321,9 @@ def make_app():
         ('/comms', CommsHandler),
         ('/comms/(.*)', CommsHandler),
         ('/settings', SettingsHandler),
-        ('/echo/(.*)', SocketHandler),
-        ('/echo', SocketHandler),
+        ('/echo/(.*)', ChatHandler),
+        ('/echo', ChatHandler),
+        ('/gen_key', DiffieHandler),
 
         ('/login/twitter', TwitterLoginHandler),
     ],
