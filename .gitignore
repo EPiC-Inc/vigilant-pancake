@@ -7,6 +7,7 @@ venv/
 replix.nix
 users.json
 users
+users.old
 .vscode/
 .env
 templates/*-policy.html
