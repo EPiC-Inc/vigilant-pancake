@@ -6,10 +6,11 @@ import os
 import pickle
 import random
 import uuid
+from dataclasses import dataclass
 from html import escape
-from types import SimpleNamespace
 
 import bcrypt
+import cryptography
 import requests
 import tornado.auth
 import tornado.escape
@@ -23,6 +24,7 @@ load_dotenv()
 ###ANCHOR: Global variables
 SESSIONS = {}
 ROOMS = {}
+#TODO: migrate to a proper database
 USERS_FILE = "users"
 OAUTH_FILE = "oauth_bindings"
 USERS = {}
@@ -36,7 +38,7 @@ except FileNotFoundError:
 try:
     with open(OAUTH_FILE, 'rb') as json_file:
         OAUTHS = pickle.load(json_file)
-except:
+except FileNotFoundError:
     pass
 
 urandom = random.SystemRandom()
@@ -44,10 +46,72 @@ urandom = random.SystemRandom()
 
 
 ###ANCHOR: Classes
+@dataclass
 class User:
-    def __init__(self, id):
+    '''User class for the program'''
+    id: str
+    display_name: str | None = None
+    password: bytes | None = None
+    oauth: dict = {}
+    pfp: str | None = None
+    global_role: int = 0
+
+    def verify(self) -> bool:
+        '''Checks if the user is a valid user and has login capability'''
+        can_login = bool(self.password) or bool(self.oauth)
+        return can_login
+
+    def create(self, password: str) -> tuple[bool, str]:
+        success, message = self.set_password(password)
+        if not success:
+            return (success, message)
+        if not self.display_name:
+            self.display_name = self.id
+        self.save()
+        return (True, "User created and saved")
+
+    def create_oauth(self, oauth_method: str, oauth_id: str) -> tuple[bool, str]:
+        match oauth_method:
+            case 'twitter' | 'fuck you this is a placeholder so i remember what i\'m doing here':
+                if not self.oauth[oauth_method]:
+                    self.oauth[oauth_method] = oauth_id
+                else:
+                    return (False, "Error: oauth.already_set_for_user")
+            case _:
+                return (False, "Error: oauth.provider_unknown")
+        self.save()
+        return (True, f"User created with oauth provider {oauth_method}\
+             and saved")
+
+    def set_password(self, new_password) -> tuple[bool, str]:
+        '''Sets the users password to the new_password'''
+        # Verify whether new password is valid / strong enough
+        if len(new_password) > 4:
+            self.password = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt())
+            return (True, "Password changed successfully")
+        return (False, "Password is not strong enough")
+
+    def save(self) -> None:
+        ''' this is terrible and should be replaced with a database asap '''
+        USERS[self.id] = self.__dict__
+        with open(USERS_FILE, 'wb') as outfile:
+            pickle.dump(USERS, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+        if not (self.oauth == {}):
+            with open(OAUTH_FILE, 'wb') as outfile:
+                pickle.dump(OAUTHS, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+
+"""     def __init__(self, id):
         if id:
             self.properties = SimpleNamespace(**USERS.get(id))  # type: ignore
+
+        user = {
+            "password": bcrypt.hashpw(password.encode(), bcrypt.gensalt()) if password else None,
+            # Oauth is stored in the form {'site': user_id,}
+            "oauth": oauth,
+            "display_name": display_name if display_name else id,
+            "pfp_link": None,
+            "global_role": global_role,
+        } """
 
 class Session:
     def __init__(self, user=None):
@@ -108,6 +172,8 @@ def save_user(oauth=False):
 
 def create_user(id, password, confirm_password, oauth=False, display_name=None, pfp_link=None, global_role=0):
     id = id.lower()
+    if not password and not oauth:
+        return (False, "No password provided")
     if id in USERS:
         return (False, "User ID already in use")
     if password != confirm_password:
@@ -198,21 +264,28 @@ class LoginHandler(BaseHandler):
     def get(self, signup=False):
         if signup == "signup-twitter":
             print(self.get_current_user().oauth_id) # type: ignore
+            self.render("__oauth_new_account.html")
+            return
+        elif signup == "login-twitter":
+            print(self.get_current_user().oauth_id) # type: ignore
             self.render("__oauth_link_account.html")
             return
-        if signup:
+        elif signup:
             self.render("signup.html", message='')
         else:
             self.render("login.html", message='')
 
     def post(self, signup=False):
         username = self.get_argument('username').lower()
-        password = self.get_argument('password')
+        password = self.get_argument('password', None)
         if signup:
-            success, message = create_user(username, password, self.get_argument('password-repeat', None))
+            page_to_go = signup if not "-" in str(signup) else "__oauth_new_account"
+            success, message = create_user(username, password, self.get_argument('password-repeat', None), self.get_current_user().oauth_id is not None if self.get_current_user() else False)
             if not success:
-                self.render("signup.html", message=message)
+                self.render(f"{page_to_go}.html", message=message)
                 return
+            if signup == "login-twitter" and self.get_current_user().oauth_id: # type: ignore
+                print("2222idididid")
             old_token = self.get_secure_cookie("session")
             self.set_secure_cookie("session", set_session(username, old_token))
             self.redirect(self.get_argument('next', '/'))
@@ -221,6 +294,8 @@ class LoginHandler(BaseHandler):
         # Check credentials
         success, message = login(username, password)
         if success:
+            if signup == "login-twitter" and self.get_current_user().oauth_id: # type: ignore
+                print("IDDIDIDIID")
             old_token = self.get_secure_cookie("session")
             self.set_secure_cookie("session", set_session(username, old_token))
             self.redirect(self.get_argument('next', '/'))
@@ -328,7 +403,7 @@ def make_app():
         ('/login/twitter', TwitterLoginHandler),
     ],
     ### Options
-    cookie_secret = "da6f7af0-8f13-489e-9573-4708037b97e5",
+    cookie_secret = os.environ['cookie_secret'],
     login_url = "/login",
     template_path = "templates",
     #default_handler_class = ErrorHandler,

@@ -11,3 +11,4 @@ users
 .env
 templates/*-policy.html
 oauth_bindings
+__pycache__/
